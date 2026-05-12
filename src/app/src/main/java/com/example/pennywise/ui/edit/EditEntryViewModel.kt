@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 sealed interface EditEntryEvent {
-    data class Saved(val exceededBy: Double?) : EditEntryEvent
+    object Saved : EditEntryEvent
 }
 
 data class EditEntryUiState(
@@ -24,6 +24,7 @@ data class EditEntryUiState(
     val selectedProfileId: Long? = null,
     val type: TransactionType = TransactionType.EXPENSE,
     val timestamp: Long = System.currentTimeMillis(),
+    val confirmLimitExceededBy: Double? = null,
     val errorMessage: String? = null,
     val isSaving: Boolean = false
 )
@@ -36,6 +37,9 @@ class EditEntryViewModel(
     val uiState: StateFlow<EditEntryUiState> = _uiState.asStateFlow()
 
     val events = MutableSharedFlow<EditEntryEvent>()
+
+    private var originalEntry: HistoryEntry? = null
+    private var pendingEntry: HistoryEntry? = null
 
     init {
         viewModelScope.launch {
@@ -50,6 +54,7 @@ class EditEntryViewModel(
         if (entryId != null && entryId >= 0) {
             viewModelScope.launch {
                 val entry = financeRepository.getHistoryById(entryId) ?: return@launch
+                originalEntry = entry
                 _uiState.update { state ->
                     state.copy(
                         amountInput = entry.amount.toString(),
@@ -92,7 +97,6 @@ class EditEntryViewModel(
         }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isSaving = true) }
             val entry = HistoryEntry(
                 id = entryId ?: 0,
                 profileId = profileId,
@@ -101,23 +105,56 @@ class EditEntryViewModel(
                 timestamp = uiState.value.timestamp,
                 type = uiState.value.type
             )
-            if (entryId == null || entryId < 0) {
-                financeRepository.addHistory(entry)
-            } else {
-                financeRepository.updateHistory(entry)
-            }
-            var exceededBy: Double? = null
+
             if (entry.type == TransactionType.EXPENSE) {
                 val profile = financeRepository.getProfileById(profileId)
                 if (profile != null && !profile.isUnlimited) {
                     val totalExpense = financeRepository.getTotalExpenseForProfile(profileId)
-                    if (totalExpense > profile.monthlyLimit) {
-                        exceededBy = totalExpense - profile.monthlyLimit
+                    val adjustedTotal = totalExpense - expenseDeltaForEdit(profileId)
+                    val projectedTotal = adjustedTotal + amount
+                    if (projectedTotal > profile.monthlyLimit) {
+                        pendingEntry = entry
+                        _uiState.update {
+                            it.copy(
+                                confirmLimitExceededBy = projectedTotal - profile.monthlyLimit
+                            )
+                        }
+                        return@launch
                     }
                 }
             }
-            _uiState.update { it.copy(isSaving = false) }
-            events.emit(EditEntryEvent.Saved(exceededBy))
+
+            saveEntryInternal(entry)
+        }
+    }
+
+    fun confirmLimitExceeded(shouldProceed: Boolean) {
+        val entry = pendingEntry
+        pendingEntry = null
+        _uiState.update { it.copy(confirmLimitExceededBy = null) }
+        if (!shouldProceed || entry == null) return
+        viewModelScope.launch {
+            saveEntryInternal(entry)
+        }
+    }
+
+    private suspend fun saveEntryInternal(entry: HistoryEntry) {
+        _uiState.update { it.copy(isSaving = true) }
+        if (entryId == null || entryId < 0) {
+            financeRepository.addHistory(entry)
+        } else {
+            financeRepository.updateHistory(entry)
+        }
+        _uiState.update { it.copy(isSaving = false) }
+        events.emit(EditEntryEvent.Saved)
+    }
+
+    private fun expenseDeltaForEdit(profileId: Long): Double {
+        val original = originalEntry ?: return 0.0
+        return if (original.type == TransactionType.EXPENSE && original.profileId == profileId) {
+            original.amount
+        } else {
+            0.0
         }
     }
 

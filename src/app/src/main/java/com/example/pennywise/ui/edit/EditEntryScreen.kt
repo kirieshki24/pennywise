@@ -24,8 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,20 +44,10 @@ fun EditEntryScreen(
     onSaved: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
-
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                is EditEntryEvent.Saved -> {
-                    val exceededBy = event.exceededBy
-                    if (exceededBy != null) {
-                        snackbarHostState.showSnackbar(
-                            message = "Limit exceeded by ${formatAmount(exceededBy)}"
-                        )
-                    }
-                    onSaved()
-                }
+                is EditEntryEvent.Saved -> onSaved()
             }
         }
     }
@@ -78,8 +67,7 @@ fun EditEntryScreen(
                     }
                 }
             )
-        },
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -164,6 +152,27 @@ fun EditEntryScreen(
                 Text(text = if (uiState.isSaving) "Saving..." else "Save")
             }
         }
+    }
+
+    val confirmLimit = uiState.confirmLimitExceededBy
+    if (confirmLimit != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.confirmLimitExceeded(false) },
+            title = { Text(text = "Limit exceeded") },
+            text = {
+                Text(text = "Limit exceeded by ${formatAmount(confirmLimit)}. Save anyway?")
+            },
+            confirmButton = {
+                Button(onClick = { viewModel.confirmLimitExceeded(true) }) {
+                    Text(text = "OK")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { viewModel.confirmLimitExceeded(false) }) {
+                    Text(text = "Cancel")
+                }
+            }
+        )
     }
 }
 
