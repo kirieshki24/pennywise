@@ -32,6 +32,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.pennywise.domain.model.TransactionType
@@ -80,14 +81,18 @@ fun EditEntryScreen(
                 value = uiState.amountInput,
                 onValueChange = viewModel::onAmountChange,
                 label = { Text(text = "Amount") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("entry_amount_input")
             )
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = uiState.noteInput,
                 onValueChange = viewModel::onNoteChange,
                 label = { Text(text = "Note") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("entry_note_input")
             )
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -100,6 +105,7 @@ fun EditEntryScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { profilesExpanded = true }
+                        .testTag("entry_profile_dropdown")
                 )
                 DropdownMenu(
                     expanded = profilesExpanded,
@@ -147,7 +153,9 @@ fun EditEntryScreen(
             Button(
                 onClick = viewModel::saveEntry,
                 enabled = canSave && !uiState.isSaving,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("entry_save_button")
             ) {
                 Text(text = if (uiState.isSaving) "Saving..." else "Save")
             }

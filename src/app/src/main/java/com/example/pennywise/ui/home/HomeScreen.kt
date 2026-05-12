@@ -35,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -65,8 +66,14 @@ fun HomeScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onAddEntry) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
+            FloatingActionButton(
+                onClick = onAddEntry,
+                modifier = Modifier.testTag("add_entry_fab")
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add"
+                )
             }
         }
     ) { paddingValues ->

@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -69,14 +70,18 @@ fun ProfilesScreen(
                 value = uiState.nameInput,
                 onValueChange = viewModel::onNameChange,
                 label = { Text(text = "Name") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("profile_name_input")
             )
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = uiState.limitInput,
                 onValueChange = viewModel::onLimitChange,
                 label = { Text(text = "Monthly limit") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("profile_limit_input"),
                 enabled = !uiState.isUnlimited
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -88,7 +93,8 @@ fun ProfilesScreen(
                 Text(text = "Unlimited", style = MaterialTheme.typography.bodyMedium)
                 Switch(
                     checked = uiState.isUnlimited,
-                    onCheckedChange = viewModel::onUnlimitedChange
+                    onCheckedChange = viewModel::onUnlimitedChange,
+                    modifier = Modifier.testTag("profile_unlimited_switch")
                 )
             }
             val errorMessage = uiState.errorMessage
@@ -101,7 +107,10 @@ fun ProfilesScreen(
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = viewModel::addProfile) {
+            Button(
+                onClick = viewModel::addProfile,
+                modifier = Modifier.testTag("profile_add_button")
+            ) {
                 Text(text = "Add profile")
             }
 
