@@ -16,6 +16,12 @@ interface HistoryDao {
     @Query("SELECT * FROM history_entries WHERE id = :id")
     suspend fun getById(id: Long): HistoryEntryEntity?
 
+    @Query(
+        "SELECT COALESCE(SUM(amount), 0) FROM history_entries " +
+            "WHERE profileId = :profileId AND type = :type"
+    )
+    suspend fun getTotalAmountForProfile(profileId: Long, type: String): Double
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entry: HistoryEntryEntity): Long
 

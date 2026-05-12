@@ -42,13 +42,18 @@ class FinanceRepositoryImpl(
         }
     }
 
-    override suspend fun addProfile(name: String, monthlyLimit: Double): Long {
+    override suspend fun addProfile(
+        name: String,
+        monthlyLimit: Double,
+        isUnlimited: Boolean
+    ): Long {
         return withContext(ioDispatcher) {
             profileDao.insert(
                 Profile(
                     id = 0,
                     name = name,
                     monthlyLimit = monthlyLimit,
+                    isUnlimited = isUnlimited,
                     createdAt = System.currentTimeMillis()
                 ).toEntity()
             )
@@ -78,6 +83,12 @@ class FinanceRepositoryImpl(
         withContext(ioDispatcher) {
             val existing = historyDao.getById(id) ?: return@withContext
             historyDao.delete(existing)
+        }
+    }
+
+    override suspend fun getTotalExpenseForProfile(profileId: Long): Double {
+        return withContext(ioDispatcher) {
+            historyDao.getTotalAmountForProfile(profileId, TransactionType.EXPENSE.storageValue)
         }
     }
 }

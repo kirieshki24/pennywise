@@ -9,6 +9,7 @@ data class ProfileEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     val monthlyLimit: Double,
+    val isUnlimited: Boolean,
     val createdAt: Long
 )
 
@@ -17,6 +18,7 @@ fun ProfileEntity.toDomain(): Profile {
         id = id,
         name = name,
         monthlyLimit = monthlyLimit,
+        isUnlimited = isUnlimited,
         createdAt = createdAt
     )
 }
@@ -26,6 +28,7 @@ fun Profile.toEntity(): ProfileEntity {
         id = id,
         name = name,
         monthlyLimit = monthlyLimit,
+        isUnlimited = isUnlimited,
         createdAt = createdAt
     )
 }

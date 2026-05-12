@@ -20,6 +20,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Button
@@ -75,8 +76,21 @@ fun ProfilesScreen(
                 value = uiState.limitInput,
                 onValueChange = viewModel::onLimitChange,
                 label = { Text(text = "Monthly limit") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !uiState.isUnlimited
             )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Unlimited", style = MaterialTheme.typography.bodyMedium)
+                Switch(
+                    checked = uiState.isUnlimited,
+                    onCheckedChange = viewModel::onUnlimitedChange
+                )
+            }
             val errorMessage = uiState.errorMessage
             if (errorMessage != null) {
                 Spacer(modifier = Modifier.height(6.dp))
@@ -102,6 +116,12 @@ fun ProfilesScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(uiState.profiles, key = { it.id }) { profile ->
+                    val spent = uiState.expenseByProfile[profile.id] ?: 0.0
+                    val exceededBy = if (!profile.isUnlimited && spent > profile.monthlyLimit) {
+                        spent - profile.monthlyLimit
+                    } else {
+                        0.0
+                    }
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Row(
                             modifier = Modifier
@@ -117,10 +137,21 @@ fun ProfilesScreen(
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
-                                    text = "Limit: ${formatAmount(profile.monthlyLimit)}",
+                                    text = if (profile.isUnlimited) {
+                                        "Limit: Unlimited"
+                                    } else {
+                                        "Limit: ${formatAmount(profile.monthlyLimit)}"
+                                    },
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+                                if (exceededBy > 0) {
+                                    Text(
+                                        text = "Limit exceeded by ${formatAmount(exceededBy)}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
                             }
                             IconButton(onClick = { viewModel.deleteProfile(profile.id) }) {
                                 Icon(

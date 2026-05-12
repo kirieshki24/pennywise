@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 sealed interface EditEntryEvent {
-    object Saved : EditEntryEvent
+    data class Saved(val exceededBy: Double?) : EditEntryEvent
 }
 
 data class EditEntryUiState(
@@ -106,8 +106,18 @@ class EditEntryViewModel(
             } else {
                 financeRepository.updateHistory(entry)
             }
+            var exceededBy: Double? = null
+            if (entry.type == TransactionType.EXPENSE) {
+                val profile = financeRepository.getProfileById(profileId)
+                if (profile != null && !profile.isUnlimited) {
+                    val totalExpense = financeRepository.getTotalExpenseForProfile(profileId)
+                    if (totalExpense > profile.monthlyLimit) {
+                        exceededBy = totalExpense - profile.monthlyLimit
+                    }
+                }
+            }
             _uiState.update { it.copy(isSaving = false) }
-            events.emit(EditEntryEvent.Saved)
+            events.emit(EditEntryEvent.Saved(exceededBy))
         }
     }
 

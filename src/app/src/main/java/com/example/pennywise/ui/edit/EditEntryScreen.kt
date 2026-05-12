@@ -24,6 +24,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,11 +45,20 @@ fun EditEntryScreen(
     onSaved: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
-            if (event is EditEntryEvent.Saved) {
-                onSaved()
+            when (event) {
+                is EditEntryEvent.Saved -> {
+                    val exceededBy = event.exceededBy
+                    if (exceededBy != null) {
+                        snackbarHostState.showSnackbar(
+                            message = "Limit exceeded by ${formatAmount(exceededBy)}"
+                        )
+                    }
+                    onSaved()
+                }
             }
         }
     }
@@ -67,7 +78,8 @@ fun EditEntryScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -153,4 +165,8 @@ fun EditEntryScreen(
             }
         }
     }
+}
+
+private fun formatAmount(value: Double): String {
+    return String.format(java.util.Locale.US, "%.2f", value)
 }

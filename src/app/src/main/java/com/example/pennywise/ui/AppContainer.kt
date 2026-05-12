@@ -3,7 +3,7 @@ package com.example.pennywise.ui
 import android.content.Context
 import androidx.room.Room
 import com.example.pennywise.data.local.AppDatabase
-import com.example.pennywise.data.mock.MockCurrencyService
+import com.example.pennywise.data.network.CbrCurrencyService
 import com.example.pennywise.data.repository.CurrencyRepository
 import com.example.pennywise.data.repository.CurrencyRepositoryImpl
 import com.example.pennywise.data.repository.FinanceRepository
@@ -14,7 +14,7 @@ class AppContainer(context: Context) {
         context,
         AppDatabase::class.java,
         "pennywise.db"
-    ).build()
+    ).fallbackToDestructiveMigration().build()
 
     val financeRepository: FinanceRepository = FinanceRepositoryImpl(
         profileDao = database.profileDao(),
@@ -22,6 +22,6 @@ class AppContainer(context: Context) {
     )
 
     val currencyRepository: CurrencyRepository = CurrencyRepositoryImpl(
-        service = MockCurrencyService()
+        service = CbrCurrencyService()
     )
 }
